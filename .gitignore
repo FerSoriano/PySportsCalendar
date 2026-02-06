@@ -1,0 +1,6 @@
+**.venv
+**/key
+**/.env
+**/__pycache__
+**/modules/*.json
+**/.vscode
