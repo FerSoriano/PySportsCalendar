@@ -60,9 +60,10 @@ class GoogleCalendarManager(GoogleCalendarService):
                 return True
         return False
 
-    def add_events_from_dataframe(self, df) -> bool:
+    def add_events_from_dataframe(self, df):
         event_created = False
-        for i, row in df.iterrows():
+        total_events = 0
+        for _, row in df.iterrows():
             match_name = f"{row['Local']} vs {row['Visitante']} | {row['Competencia']} ⚽️"
             event_data = {
                 "summary": match_name,
@@ -81,7 +82,7 @@ class GoogleCalendarManager(GoogleCalendarService):
                     event_data=event_data,
                     calendar_id=CALENDAR_ID
                 )
-                event = f"Nuevo evento: {match_name} el dia {row['Fecha_Str']}"
-                print(event)
+                print(f"Nuevo evento: {match_name} el dia {row['Fecha_Str']}")
+                total_events += 1
                 event_created = True
-        return event_created
+        return event_created, total_events

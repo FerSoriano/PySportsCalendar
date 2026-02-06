@@ -13,6 +13,11 @@ TEAMS_URLS = {
     "Manchester City": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/382",
     "Manchester United": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/360",
 
+    "Milan": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/103",
+    "Inter": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/110",
+
+    "Atlas": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/216",
+
     "Argentina": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/202",
     "Mexico": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/203",
     "Brasil": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/205",

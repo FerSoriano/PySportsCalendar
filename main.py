@@ -34,13 +34,15 @@ def main():
         )
         return
 
-    event_created = gcalendar.add_events_from_dataframe(df_matches)
+    event_created, total_events = gcalendar.add_events_from_dataframe(df_matches)
 
     if event_created:
+        msg = f"\n✅📅 Se agregaron {total_events} partidos nuevos"
         email.sendNotification(
             subject="🤖 BOT: Nuevos Partidos 🎉 - Google Calendar",
-            body=f"\n✅📅 Se agregaron {len(df_matches)} partidos nuevos"
+            body=msg
         )
+        print(msg)
         print("\nProceso finalizado 🍺")
     else:
         print("No se agregaron eventos nuevos")
