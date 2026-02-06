@@ -1,0 +1,50 @@
+
+import pandas as pd
+from modules import GoogleCalendarManager, EmailNotification, EspnScraper, TEAMS_URLS
+
+
+def main():
+    gcalendar = GoogleCalendarManager()
+    email = EmailNotification()
+
+    try:
+        print("--- OBTENIENDO DATOS DE ESPN ---")
+        scraper = EspnScraper()
+        df_matches = scraper.run_all(TEAMS_URLS)
+
+        if df_matches.empty:
+            print("⚠️ No hay partidos nuevos para procesar.")
+            return
+
+        print(f"\n✅ Se encontraron {len(df_matches)} partidos 📅")
+
+        print("\nACTUALIZANDO CALENDARIO...")
+
+        print("PROCESANDO FECHAS...⌛️\n")
+        df_matches['end_datetime'] = df_matches['Fecha_Obj'] + pd.Timedelta(hours=2)
+        # Convertimos a string ISO con zona horaria (-06:00 México)
+        df_matches['start_iso'] = df_matches['Fecha_Obj'].apply(lambda x: x.strftime("%Y-%m-%dT%H:%M:%S-06:00"))
+        df_matches['end_iso'] = df_matches['end_datetime'].apply(lambda x: x.strftime("%Y-%m-%dT%H:%M:%S-06:00"))
+
+    except Exception as error:
+        print('error:', error)
+        email.sendNotification(
+            subject="🤖 BOT: Error al procesar los partidos. ❌",
+            body=error
+        )
+        return
+
+    event_created = gcalendar.add_events_from_dataframe(df_matches)
+
+    if event_created:
+        email.sendNotification(
+            subject="🤖 BOT: Nuevos Partidos 🎉 - Google Calendar",
+            body=f"\n✅📅 Se agregaron {len(df_matches)} partidos nuevos"
+        )
+        print("\nProceso finalizado 🍺")
+    else:
+        print("No se agregaron eventos nuevos")
+
+
+if __name__ == "__main__":
+    main()
