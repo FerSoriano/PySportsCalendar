@@ -22,6 +22,9 @@ TEAMS_URLS = {
     "Mexico": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/203",
     "Brasil": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/205",
     "Espana": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/164",
+    "Francia": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/478",
+
+    "Boca Juniors": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/5"
 }
 
 
