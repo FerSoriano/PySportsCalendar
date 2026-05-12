@@ -1,9 +1,12 @@
 import re
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
+
+logger = logging.getLogger(__name__)
 
 TEAMS_URLS = {
     "Barcelona": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/83/",
@@ -209,7 +212,7 @@ class EspnScraper:
                 matches.append(parsed_event)
 
         if matches:
-            print(f"   {competition_name}: {len(matches)} partidos")
+            logger.debug("%s: %s partidos", competition_name, len(matches))
         return matches
 
     def get_matches(self, team_name, url):
@@ -219,7 +222,7 @@ class EspnScraper:
         end_date = (pd.Timestamp.now(tz=self.local_tz) + pd.Timedelta(days=self.lookahead_days)).strftime("%Y%m%d")
         date_range = f"{start_date}-{end_date}"
 
-        print(f"⚽ Procesando: {team_name}...")
+        logger.info("Procesando equipo: %s", team_name)
         all_matches = []
         for league_code in self._get_relevant_league_codes([team_info]):
             league_matches = self._fetch_league_matches(league_code, {team_id}, date_range)
@@ -234,7 +237,10 @@ class EspnScraper:
         end_date = (pd.Timestamp.now(tz=self.local_tz) + pd.Timedelta(days=self.lookahead_days)).strftime("%Y%m%d")
         date_range = f"{start_date}-{end_date}"
 
-        print(f"🔎 Escaneando competiciones de ESPN para {len(tracked_team_ids)} equipos...")
+        logger.info(
+            "Escaneando competiciones de ESPN para %s equipos",
+            len(tracked_team_ids),
+        )
         league_codes = self._get_relevant_league_codes(team_infos)
         all_matches = []
 
@@ -247,19 +253,26 @@ class EspnScraper:
                 all_matches.extend(future.result())
 
         if not all_matches:
+            logger.warning("No se encontraron partidos confirmados")
             return pd.DataFrame()
 
         df = pd.DataFrame(all_matches)
         df = df.drop_duplicates(subset=["Event_Id"]).drop(columns=["Event_Id"])
+        logger.debug("Se detectaron %s partidos después de limpiar duplicados", len(df))
         return df.sort_values(by=["Fecha_Obj", "Competencia", "Local", "Visitante"]).reset_index(drop=True)
 
 
 if __name__ == "__main__":
+    from modules.logging_config import configure_logging
+
+    configure_logging()
+    logger.info("Ejecutando scraper de ESPN en modo directo")
     scraper = EspnScraper()
     df = scraper.run_all(TEAMS_URLS)
-
-    print("\n--- 📅 PARTIDOS ENCONTRADOS ---")
-    if not df.empty:
-        print(df[["Local", "Visitante", "Fecha_Obj", "Fecha_Str", "Hora", "Competencia"]])
+    if df.empty:
+        logger.warning("No se encontraron partidos confirmados")
     else:
-        print("⚠️ No se encontraron partidos confirmados.")
+        logger.debug(
+            "Partidos encontrados:\n%s",
+            df[["Local", "Visitante", "Fecha_Obj", "Fecha_Str", "Hora", "Competencia"]].to_string(index=False),
+        )
