@@ -1,7 +1,10 @@
 import os
+import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+logger = logging.getLogger(__name__)
 
 
 class EmailNotification():
@@ -32,6 +35,6 @@ class EmailNotification():
             server.login(sender_email, password)
             server.sendmail(sender_email, receiver_email, message.as_string())
             server.quit()
-            print("\nCorreo enviado con éxito. 🚀")
+            logger.info("Correo enviado con éxito")
         except Exception as e:
-            print(f"Error enviando el correo: {e}")
+            logger.error("Error enviando el correo: %s", e)

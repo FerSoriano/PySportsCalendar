@@ -2,12 +2,14 @@
 import os
 import json
 import hashlib
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from .notifications import EmailNotification
 
+logger = logging.getLogger(__name__)
 email = EmailNotification()
 load_dotenv()
 
@@ -33,10 +35,10 @@ class GoogleCalendarService():
 
         except Exception as error:
             error_message = "Error al autenticar la cuenta de servicio."
-            print(error)
+            logger.exception(error_message)
             email.sendNotification(
                     subject=error_message,
-                    body=error
+                    body=str(error)
                 )
             raise
 
@@ -177,11 +179,11 @@ class GoogleCalendarManager(GoogleCalendarService):
                         calendar_id=CALENDAR_ID
                     )
                     self._save_event_index()
-                    print(f"Evento actualizado: {match_name} el dia {row['Fecha_Str']}")
+                    logger.info("Evento actualizado: %s el dia %s", match_name, row["Fecha_Str"])
                     total_updated += 1
                 else:
                     self._save_event_index()
-                    print(f"Sin cambios: {match_name}")
+                    logger.debug("Sin cambios: %s", match_name)
                     total_skipped += 1
             else:
                 created_event = self.create_event(
@@ -193,7 +195,7 @@ class GoogleCalendarManager(GoogleCalendarService):
                     "summary": match_name
                 }
                 self._save_event_index()
-                print(f"Nuevo evento: {match_name} el dia {row['Fecha_Str']}")
+                logger.info("Nuevo evento: %s el dia %s", match_name, row["Fecha_Str"])
                 total_events += 1
                 event_created = True
         return event_created, total_events, total_updated, total_skipped

@@ -7,3 +7,4 @@
 **/modules/*.json
 **/.vscode
 *data/*
+**/logs
