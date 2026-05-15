@@ -9,18 +9,14 @@ load_dotenv()
 
 def _resolve_log_file_path() -> Path:
     raw_path = os.getenv("APP_LOG_PATH")
-    if not raw_path:
-        return Path(__file__).resolve().parent.parent / "logs" / "cron_log.log"
-
-    path = Path(raw_path).expanduser()
-
-    if path.exists() and path.is_dir():
-        return path / "cron_log.log"
-
-    if path.suffix:
-        return path
-
-    return path / "cron_log.log"
+    
+    if raw_path:
+        log_dir = Path(raw_path).expanduser()
+    else:
+        log_dir = Path.home() / "logs"
+    
+    project_name = "sports_calendar" 
+    return log_dir / f"{project_name}.log"
 
 
 LOG_FILE_PATH = _resolve_log_file_path()
