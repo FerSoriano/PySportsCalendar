@@ -23,9 +23,9 @@ class GoogleCalendarService():
         self.service = self._authenticate()
 
     def _authenticate(self):
-        key_path = os.getenv('SERVICEACCOUNT')
+        key_path = os.getenv('GOOGLE_CALENDAR_SERVICE_ACCOUNT')
         if not key_path:
-            raise ValueError("Error: La variable de entorno 'SERVICEACCOUNT' no está definida.")
+            raise ValueError("Error: La variable de entorno 'GOOGLE_CALENDAR_SERVICE_ACCOUNT' no está definida.")
         
         try:
             creds = service_account.Credentials.from_service_account_file(
