@@ -32,6 +32,7 @@ TEAMS_URLS = {
     "Francia": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/478",
 
     "Boca Juniors": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/5",
+    "Santos": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/2674"
 }
 
 
@@ -64,6 +65,9 @@ class EspnScraper:
             "ita.super_cup",
             "mex.1",
             "mex.campeon",
+            "bra.1",
+            "bra.copa_do_brasil",
+            "bra.supercopa",
             "arg.1",
             "arg.copa",
             "arg.copa_de_la_superliga",
