@@ -24,6 +24,10 @@ TEAMS_URLS = {
 
     "Atlas": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/216",
     "Chivas": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/219",
+    "America": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/227",
+    "Cruz Azul": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/218",
+    "Pumas": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/233",
+    "Toluca": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/223",
 
     "Argentina": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/202",
     "Mexico": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/203",
