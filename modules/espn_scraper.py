@@ -87,7 +87,8 @@ class EspnScraper:
             "conmebol.libertadores",
             "conmebol.sudamericana",
             "conmebol.recopa",
-            "concacaf.champions_cup",
+            "concacaf.champions",
+            "concacaf.leagues.cup",
             "fifa.cwc",
             "club.friendly",
         }
