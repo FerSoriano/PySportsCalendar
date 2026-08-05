@@ -44,13 +44,6 @@ TEAMS_URLS = {
 
 class EspnScraper:
     def __init__(self):
-        self.headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/91.0.4472.124 Safari/537.36"
-            )
-        }
         self.local_tz = ZoneInfo("America/Mexico_City")
         self.lookahead_days = 180
         self.max_workers = 8
@@ -124,7 +117,7 @@ class EspnScraper:
         return match.group(1)
 
     def _fetch_json(self, url):
-        response = requests.get(url, headers=self.headers, timeout=20)
+        response = requests.get(url, timeout=20)
         response.raise_for_status()
         return response.json()
 
