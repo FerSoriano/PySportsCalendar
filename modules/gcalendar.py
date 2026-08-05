@@ -15,6 +15,7 @@ load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = os.getenv('CALENDAR_ID')
+CALENDAR_BARCELONA_ID = os.getenv('CALENDAR_BARCELONA_ID')
 EVENT_INDEX_PATH = Path(__file__).resolve().parent.parent / "data" / "event_index.json"
 
 
@@ -67,6 +68,11 @@ class GoogleCalendarManager(GoogleCalendarService):
         raw_key = f"{local_team}|{away_team}|{competition}".strip().lower()
         return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
+    def _resolve_calendar_id(self, local_team, away_team):
+        if local_team == "Barcelona" or away_team == "Barcelona":
+            return CALENDAR_BARCELONA_ID
+        return CALENDAR_ID
+
     def _event_datetimes_changed(self, existing_event, new_event_data):
         existing_start = existing_event.get("start", {}).get("dateTime")
         existing_end = existing_event.get("end", {}).get("dateTime")
@@ -86,6 +92,14 @@ class GoogleCalendarManager(GoogleCalendarService):
             calendarId=calendar_id,
             eventId=event_id,
             body=event_data
+        ).execute()
+        return event
+
+    def move_event(self, event_id, source_calendar_id, destination_calendar_id):
+        event = self.service.events().move(
+            calendarId=source_calendar_id,
+            eventId=event_id,
+            destination=destination_calendar_id
         ).execute()
         return event
 
@@ -147,6 +161,7 @@ class GoogleCalendarManager(GoogleCalendarService):
         for _, row in df.iterrows():
             match_name = f"{row['Local']} vs {row['Visitante']} | {row['Competencia']} ⚽️"
             event_hash = self._build_event_key(row['Local'], row['Visitante'], row['Competencia'])
+            calendar_id = self._resolve_calendar_id(row['Local'], row['Visitante'])
             event_data = {
                 "summary": match_name,
                 "start": {
@@ -164,7 +179,7 @@ class GoogleCalendarManager(GoogleCalendarService):
                 }
             }
 
-            existing_event = self.get_event_by_hash(CALENDAR_ID, event_hash, match_name)
+            existing_event = self.get_event_by_hash(calendar_id, event_hash, match_name)
 
             if existing_event:
                 self.event_index[event_hash] = {
@@ -176,7 +191,7 @@ class GoogleCalendarManager(GoogleCalendarService):
                     self.update_event(
                         event_id=existing_event["id"],
                         event_data=event_data,
-                        calendar_id=CALENDAR_ID
+                        calendar_id=calendar_id
                     )
                     self._save_event_index()
                     logger.info("Evento actualizado: %s el dia %s", match_name, row["Fecha_Str"])
@@ -188,7 +203,7 @@ class GoogleCalendarManager(GoogleCalendarService):
             else:
                 created_event = self.create_event(
                     event_data=event_data,
-                    calendar_id=CALENDAR_ID
+                    calendar_id=calendar_id
                 )
                 self.event_index[event_hash] = {
                     "event_id": created_event["id"],
