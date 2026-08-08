@@ -41,6 +41,9 @@ TEAMS_URLS = {
     "Santos": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/2674"
 }
 
+# Teams whose matches go to CALENDAR_FAVORITE_TEAMS_ID instead of the main calendar.
+FAVORITE_TEAMS = {"Barcelona", "Atlas"}
+
 
 class EspnScraper:
     def __init__(self):

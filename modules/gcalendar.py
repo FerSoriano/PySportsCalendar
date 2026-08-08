@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from .notifications import EmailNotification
+from .espn_scraper import FAVORITE_TEAMS
 
 logger = logging.getLogger(__name__)
 email = EmailNotification()
@@ -15,7 +16,7 @@ load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = os.getenv('CALENDAR_ID')
-CALENDAR_BARCELONA_ATLAS_ID = os.getenv('CALENDAR_BARCELONA_ATLAS_ID')
+CALENDAR_FAVORITE_TEAMS_ID = os.getenv('CALENDAR_FAVORITE_TEAMS_ID')
 EVENT_INDEX_PATH = Path(__file__).resolve().parent.parent / "data" / "event_index.json"
 
 
@@ -69,8 +70,8 @@ class GoogleCalendarManager(GoogleCalendarService):
         return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
     def _resolve_calendar_id(self, local_team, away_team):
-        if local_team == "Barcelona" or away_team == "Barcelona" or local_team == "Atlas" or away_team == "Atlas":
-            return CALENDAR_BARCELONA_ATLAS_ID
+        if local_team in FAVORITE_TEAMS or away_team in FAVORITE_TEAMS:
+            return CALENDAR_FAVORITE_TEAMS_ID
         return CALENDAR_ID
 
     def _event_datetimes_changed(self, existing_event, new_event_data):

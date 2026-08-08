@@ -7,7 +7,8 @@ from googleapiclient.errors import HttpError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from modules.gcalendar import GoogleCalendarManager, CALENDAR_ID, CALENDAR_BARCELONA_ATLAS_ID  # noqa: E402
+from modules.gcalendar import GoogleCalendarManager, CALENDAR_ID, CALENDAR_FAVORITE_TEAMS_ID  # noqa: E402
+from modules.espn_scraper import FAVORITE_TEAMS  # noqa: E402
 from modules.logging_config import configure_logging  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ def _parse_teams(summary):
     return local.strip(), visitante.strip()
 
 
-def _find_barcelona_and_atlas_matches(event_index):
+def _find_favorite_team_matches(event_index):
     matches = []
     for event_hash, entry in event_index.items():
         summary = entry.get("summary", "")
@@ -29,14 +30,14 @@ def _find_barcelona_and_atlas_matches(event_index):
         if local is None:
             logger.warning("No se pudo parsear el summary: %s", summary)
             continue
-        if local == "Barcelona" or visitante == "Barcelona" or local == "Atlas" or visitante == "Atlas":
+        if local in FAVORITE_TEAMS or visitante in FAVORITE_TEAMS:
             matches.append((event_hash, entry["event_id"], summary))
     return matches
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Migra los partidos de Barcelona y del Atlas ya indexados desde CALENDAR_ID hacia CALENDAR_BARCELONA_ATLAS_ID"
+        description="Migra los partidos de los equipos favoritos ya indexados desde CALENDAR_ID hacia CALENDAR_FAVORITE_TEAMS_ID"
     )
     parser.add_argument(
         "--apply",
@@ -47,14 +48,14 @@ def main():
 
     configure_logging()
 
-    if not CALENDAR_BARCELONA_ATLAS_ID:
-        logger.error("CALENDAR_BARCELONA_ATLAS_ID no está definido en el entorno (.env)")
+    if not CALENDAR_FAVORITE_TEAMS_ID:
+        logger.error("CALENDAR_FAVORITE_TEAMS_ID no está definido en el entorno (.env)")
         return
 
     gcalendar = GoogleCalendarManager()
-    matches_to_migrate = _find_barcelona_and_atlas_matches(gcalendar.event_index)
+    matches_to_migrate = _find_favorite_team_matches(gcalendar.event_index)
 
-    logger.info("Se encontraron %s partidos de Barcelona y del Atlas en el índice", len(matches_to_migrate))
+    logger.info("Se encontraron %s partidos de equipos favoritos en el índice", len(matches_to_migrate))
 
     if not args.apply:
         logger.info("Modo dry-run (usa --apply para ejecutar el movimiento real). Partidos que se moverían:")
@@ -66,7 +67,7 @@ def main():
     failed = 0
     for _, event_id, summary in matches_to_migrate:
         try:
-            gcalendar.move_event(event_id, CALENDAR_ID, CALENDAR_BARCELONA_ATLAS_ID)
+            gcalendar.move_event(event_id, CALENDAR_ID, CALENDAR_FAVORITE_TEAMS_ID)
             logger.info("Movido: %s", summary)
             moved += 1
         except HttpError as error:
