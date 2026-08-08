@@ -15,7 +15,7 @@ load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = os.getenv('CALENDAR_ID')
-CALENDAR_BARCELONA_ID = os.getenv('CALENDAR_BARCELONA_ID')
+CALENDAR_BARCELONA_ATLAS_ID = os.getenv('CALENDAR_BARCELONA_ATLAS_ID')
 EVENT_INDEX_PATH = Path(__file__).resolve().parent.parent / "data" / "event_index.json"
 
 
@@ -69,8 +69,8 @@ class GoogleCalendarManager(GoogleCalendarService):
         return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
     def _resolve_calendar_id(self, local_team, away_team):
-        if local_team == "Barcelona" or away_team == "Barcelona":
-            return CALENDAR_BARCELONA_ID
+        if local_team == "Barcelona" or away_team == "Barcelona" or local_team == "Atlas" or away_team == "Atlas":
+            return CALENDAR_BARCELONA_ATLAS_ID
         return CALENDAR_ID
 
     def _event_datetimes_changed(self, existing_event, new_event_data):
