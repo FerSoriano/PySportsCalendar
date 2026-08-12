@@ -1,45 +1,20 @@
 import re
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
+import json
 
 logger = logging.getLogger(__name__)
 
-TEAMS_URLS = {
-    "Barcelona": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/83/",
-    "Real Madrid": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/86/",
+TEAMS_URL_PATH = Path(__file__).resolve().parent.parent / "data" / "teams_url.json"
 
-    "Arsenal": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/359",
-    "Chelsea": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/363/",
-    "Liverpool": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/364",
-    "Manchester City": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/382",
-    "Manchester United": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/360",
-
-    "Milan": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/103",
-    "Inter": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/110",
-    "Juventus": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/111",
-
-    "Atlas": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/216",
-    "Chivas": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/219",
-    "America": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/227",
-    "Cruz Azul": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/218",
-    "Pumas": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/233",
-    "Toluca": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/223",
-
-    "Argentina": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/202",
-    "Mexico": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/203",
-    "Brasil": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/205",
-    "Espana": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/164",
-    "Francia": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/478",
-    "Inglaterra": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/448",
-    "Portugal": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/482",
-
-    "Boca Juniors": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/5",
-    "Santos": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/2674"
-}
+with TEAMS_URL_PATH.open("r") as f:
+    teams = json.load(f)
+    TEAMS_URLS = teams.get("active", {})
 
 # Teams whose matches go to CALENDAR_FAVORITE_TEAMS_ID instead of the main calendar.
 FAVORITE_TEAMS = {"Barcelona", "Atlas"}
