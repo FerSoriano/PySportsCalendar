@@ -5,6 +5,7 @@ PySportsCalendar fetches upcoming match schedules from ESPN's public APIs for a 
 **Main features**
 
 - Fetches match data for club and national teams directly from ESPN's public JSON APIs (no HTML scraping), covering leagues like La Liga, Premier League, Serie A, Liga MX, Ligue 1, Brasileirão, Argentine football, Champions/Europa/Conference League, Libertadores/Sudamericana, CONCACAF competitions, and national-team competitions (World Cup, qualifiers, Nations League, continental cups, etc.).
+- Tracks which teams to fetch via `data/teams_url.json` (not tracked in git, so you can edit it freely without generating diffs), split into `active`/`inactive` sections. See "Adding your favorite teams" below.
 - Adds and updates events in Google Calendar, keeping a local index (generated at runtime under `data/`, not tracked in git) so existing events are matched by hash and updated in place instead of duplicated when their date/time changes.
 - Routes matches involving your favorite teams to a dedicated secondary calendar (`CALENDAR_FAVORITE_TEAMS_ID`); every other team goes to the main calendar (`CALENDAR_ID`). Favorite teams are configured via `FAVORITE_TEAMS` in [modules/espn_scraper.py](modules/espn_scraper.py).
 - Sends email notifications on errors, and summarizes how many events were added/updated/skipped after each run.
@@ -77,25 +78,28 @@ python3 -m scripts.migrate_favorite_teams_calendar --apply  # actually moves the
 
 **Adding your favorite teams**
 
-You can customize which teams are tracked by editing the `TEAMS_URLS` dictionary in [modules/espn_scraper.py](modules/espn_scraper.py). Example — append or modify entries as needed:
+Which teams are tracked is configured in `data/teams_url.json`, not in the code. This file lives under `data/` and is excluded from git (see `.gitignore`), so you can add, remove, or reshuffle teams without generating diffs. It doesn't exist yet in a fresh clone — create it yourself with this structure:
 
-```python
-TEAMS_URLS = {
-	"Barcelona": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/83/",
-	"Real Madrid": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/86/",
-	# Add your teams below (works for club or national teams):
-	"My Favorite FC": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/<TEAM_ID>/",
-	"Another Team": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/<TEAM_ID>/",
+```json
+{
+    "active": {
+        "Barcelona": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/83/",
+        "Real Madrid": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/86/",
+        "My Favorite FC": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/<TEAM_ID>/"
+    },
+    "inactive": {
+        "Another Team": "https://www.espn.com.mx/futbol/equipo/calendario/_/id/<TEAM_ID>/"
+    }
 }
-
-# Replace `<TEAM_ID>` with the numeric id from the ESPN team calendar URL for that club or national team.
-# The trailing slash on the URL is optional; only the numeric id is used.
 ```
 
-To route a team's matches to `CALENDAR_FAVORITE_TEAMS_ID` instead of the main calendar, also add its exact name (as it appears in `Local`/`Visitante`, i.e. its ESPN `displayName`) to the `FAVORITE_TEAMS` set right below `TEAMS_URLS`:
+- Only teams under `active` are fetched and synced to the calendar; `main.py` loads them via `TEAMS_URLS` in [modules/espn_scraper.py](modules/espn_scraper.py), which reads `data/teams_url.json` at import time.
+- `inactive` is just a place to park teams you don't currently want without deleting their URL — move an entry between `active` and `inactive` to toggle it.
+- Each key is the display name you want to use for the team; each value is its ESPN team calendar URL. Works for both club and national teams — only the numeric `id` in the URL is used, so the trailing slash is optional.
+- Save the file and run `python3 main.py` to include your changes; no code changes or restarts beyond that are needed.
+
+To route a team's matches to `CALENDAR_FAVORITE_TEAMS_ID` instead of the main calendar, add its exact name (as it appears in `Local`/`Visitante`, i.e. its ESPN `displayName`) to the `FAVORITE_TEAMS` set in [modules/espn_scraper.py](modules/espn_scraper.py):
 
 ```python
 FAVORITE_TEAMS = {"Barcelona", "Atlas"}
 ```
-
-Example: to add a new team, open [modules/espn_scraper.py](modules/espn_scraper.py), find `TEAMS_URLS` near the top, and add a new key/value pair for the team name and its ESPN calendar URL. Save and run `python3 main.py` to include the new team's matches.
