@@ -23,11 +23,11 @@ FAVORITE_TEAMS = {"Barcelona", "Atlas"}
 class EspnScraper:
     def __init__(self):
         self.local_tz = ZoneInfo("America/Mexico_City")
-        self.lookahead_days = 180
+        self.lookahead_days = 90
         self.max_workers = 8
         self.team_api_url = "https://site.api.espn.com/apis/site/v2/sports/soccer/teams/{team_id}"
         self.core_leagues_url = "https://sports.core.api.espn.com/v2/sports/soccer/leagues?page={page}&limit=100"
-        self.scoreboard_api_url = "https://site.api.espn.com/apis/site/v2/sports/soccer/{league_code}/scoreboard?dates={date_range}"
+        self.scoreboard_api_url = "https://site.api.espn.com/apis/site/v2/sports/soccer/{league_code}/scoreboard?dates={month}&limit=1000"
         self.club_league_codes = {
             "esp.1",
             "esp.copa_del_rey",
@@ -87,6 +87,16 @@ class EspnScraper:
             "concacaf.nations.league",
             "concacaf.confederations_playoff",
         }
+
+    def _get_month_tokens(self):
+        now = pd.Timestamp.now(tz=self.local_tz)
+        end = now + pd.Timedelta(days=self.lookahead_days)
+        months = []
+        cursor = now.replace(day=1)
+        while cursor <= end:
+            months.append(cursor.strftime("%Y%m"))
+            cursor = (cursor + pd.DateOffset(months=1)).replace(day=1)
+        return months
 
     def _extract_team_id(self, url):
         match = re.search(r"/id/(\d+)", url)
@@ -161,7 +171,8 @@ class EspnScraper:
             return None
 
         local_dt = event_dt.tz_convert(self.local_tz)
-        if local_dt <= pd.Timestamp.now(tz=self.local_tz):
+        now = pd.Timestamp.now(tz=self.local_tz)
+        if local_dt <= now or local_dt > now + pd.Timedelta(days=self.lookahead_days):
             return None
 
         if not competition.get("timeValid", event.get("timeValid", False)):
@@ -178,20 +189,23 @@ class EspnScraper:
             "Competencia": competition_name,
         }
 
-    def _fetch_league_matches(self, league_code, tracked_team_ids, date_range):
-        try:
-            scoreboard_data = self._fetch_json(
-                self.scoreboard_api_url.format(league_code=league_code, date_range=date_range)
-            )
-        except Exception:
-            return []
-
-        competition_name = scoreboard_data.get("leagues", [{}])[0].get("name", league_code)
+    def _fetch_league_matches(self, league_code, tracked_team_ids, month_tokens):
         matches = []
-        for event in scoreboard_data.get("events", []):
-            parsed_event = self._parse_event(event, competition_name, tracked_team_ids)
-            if parsed_event:
-                matches.append(parsed_event)
+        competition_name = league_code
+        for month in month_tokens:
+            try:
+                scoreboard_data = self._fetch_json(
+                    self.scoreboard_api_url.format(league_code=league_code, month=month)
+                )
+            except Exception:
+                logger.debug("Fallo al consultar %s para %s", league_code, month)
+                continue
+
+            competition_name = scoreboard_data.get("leagues", [{}])[0].get("name", league_code)
+            for event in scoreboard_data.get("events", []):
+                parsed_event = self._parse_event(event, competition_name, tracked_team_ids)
+                if parsed_event:
+                    matches.append(parsed_event)
 
         if matches:
             logger.debug("%s: %s partidos", competition_name, len(matches))
@@ -200,14 +214,12 @@ class EspnScraper:
     def get_matches(self, team_name, url):
         team_id = self._extract_team_id(url)
         team_info = self._get_team_info(team_id)
-        start_date = pd.Timestamp.now(tz=self.local_tz).strftime("%Y%m%d")
-        end_date = (pd.Timestamp.now(tz=self.local_tz) + pd.Timedelta(days=self.lookahead_days)).strftime("%Y%m%d")
-        date_range = f"{start_date}-{end_date}"
+        month_tokens = self._get_month_tokens()
 
         logger.info("Procesando equipo: %s", team_name)
         all_matches = []
         for league_code in self._get_relevant_league_codes([team_info]):
-            league_matches = self._fetch_league_matches(league_code, {team_id}, date_range)
+            league_matches = self._fetch_league_matches(league_code, {team_id}, month_tokens)
             all_matches.extend(league_matches)
 
         return all_matches
@@ -215,9 +227,7 @@ class EspnScraper:
     def run_all(self, teams_dict):
         team_infos = [self._get_team_info(self._extract_team_id(url)) for url in teams_dict.values()]
         tracked_team_ids = {team_info["id"] for team_info in team_infos}
-        start_date = pd.Timestamp.now(tz=self.local_tz).strftime("%Y%m%d")
-        end_date = (pd.Timestamp.now(tz=self.local_tz) + pd.Timedelta(days=self.lookahead_days)).strftime("%Y%m%d")
-        date_range = f"{start_date}-{end_date}"
+        month_tokens = self._get_month_tokens()
 
         logger.info(
             "Escaneando competiciones de ESPN para %s equipos",
@@ -228,7 +238,7 @@ class EspnScraper:
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = {
-                executor.submit(self._fetch_league_matches, league_code, tracked_team_ids, date_range): league_code
+                executor.submit(self._fetch_league_matches, league_code, tracked_team_ids, month_tokens): league_code
                 for league_code in league_codes
             }
             for future in as_completed(futures):
